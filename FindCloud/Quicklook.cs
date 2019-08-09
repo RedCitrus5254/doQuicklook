@@ -7,19 +7,41 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Drawing;
 using System.ComponentModel;
+using System.Windows.Forms;
+using System.Threading;
 
 namespace FindCloud
 {
     //надо допилить:
     //получить размер изображения, чтобы узнать, насколько его уменьшать (закончено или почти)
-    //прогресс-бар, чтобы пользователь видел, сколько осталось ждать квиклук
+    //прогресс-бар, чтобы пользователь видел, сколько осталось ждать квиклук (закончено)
     //минимальный интерфейс, который будет выводить картинки
     //многопоточность
     public class Quicklook
     {
-        private const int QUICKLOOK_SIZE = 2000;
+        private static int numOfPictures;
 
-        private static ProgressDialog ProgressDialog { get; set; } = new ProgressDialog();
+        private static BackgroundWorker _worker;
+
+        private static ManualResetEvent mre = new ManualResetEvent(false);
+
+        private int quicklookSize;
+
+        private string pathToQuicklookCatalog;
+
+        private static string pathToPicture;
+
+        private double percent;
+
+        private string outputFile;
+
+        private static bool isCanceled = false;
+
+        private string format;
+
+
+
+        private static ProgressDialog ProgressDialog { get; set; } /*= new ProgressDialog();*/
 
         //public string InputFile { get; set; }
 
@@ -27,120 +49,41 @@ namespace FindCloud
         {
 
         }
-
-        private void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        
+        public void DeleteFiles()
         {
-            //ProgressDialog.UpdateProgress(e.ProgressPercentage);
 
-            //this.label1.Text = e.ProgressPercentage.ToString() + "% complete";
-        }
-
-        //private void bw_DoWork(object sender, DoWorkEventArgs e)
-        //{
-        //    BackgroundWorker worker = (BackgroundWorker)sender;
-
-        //    for (int i = 0; i < 100; ++i)
-        //    {
-        //        // report your progres
-        //        worker.ReportProgress(i);
-
-        //        // pretend like this a really complex calculation going on eating up CPU time
-        //        System.Threading.Thread.Sleep(100);
-        //    }
-        //    e.Result = "42";
-        //}
-
-
-        private double CalculatePercent(int maxSize, string InputFile)  //высчитываем, какой процент изображения останется от исходного 
-        {
-            double inputFileWidth;
-            double inputFileHeight;
-            double coefficient;
-            double quicklookWidth = maxSize;
-            double quicklookHeight;
-            //const int optimalSquare = 4000000;  //оптимальная площадь изображения width*height (2000*2000)
-
-            using (FileStream stream = new FileStream(InputFile, FileMode.Open, FileAccess.Read)) //открываем информаци о файле
+            string rootFolderPath = pathToQuicklookCatalog;
+            string filesToDelete = outputFile.Substring(outputFile.LastIndexOf(@"\")+1);   
+            filesToDelete = filesToDelete.Replace(".jpg", ""); //оставляем только имя файла без разрешения
+            Console.WriteLine(filesToDelete);
+            string[] fileList = System.IO.Directory.GetFiles(rootFolderPath, filesToDelete); //ищем такие файлы
+            foreach (string file in fileList)
             {
-                using (Image tif = Image.FromStream(stream, false, false))
-                {
-                    inputFileWidth = tif.PhysicalDimension.Width;
-                    inputFileHeight = tif.PhysicalDimension.Height;
-                    Console.WriteLine("ширина = " + inputFileWidth);
-                    Console.WriteLine("высота = " + inputFileHeight);
-                }
+                System.Diagnostics.Debug.WriteLine(file + "will be deleted");
+                //  System.IO.File.Delete(file);
             }
-
-            quicklookHeight = (maxSize / inputFileWidth) * inputFileHeight;
-
-            coefficient = Math.Sqrt((quicklookHeight*quicklookWidth) / (inputFileWidth*inputFileHeight));
-            Console.WriteLine(coefficient);
-
-            coefficient = coefficient * 100; //получаем коэффициент в процентах
-            Console.WriteLine(coefficient);
-
-            return coefficient;
-        }
-
-        public void CreateQuicklookOneImage(string pathToPicture, string pathToQuicklookCatalog, int quicklookSize = 2000) //ещё проекции и др.
-        {
-            if (quicklookSize <= 0 || quicklookSize >= 10000)               
-            {
-                throw new Exception("слишом маленький или большой размер квиклука");
-            }
-
-            var pct = CalculatePercent(quicklookSize, pathToPicture);
-
-            CreateQuicklookOneImage(pathToPicture, pathToQuicklookCatalog, pct);
-        }
-
-        public void CreateQuicklookOneImage(string pathToPicture, string pathToQuicklookCatalog, double sizePercent = 20) //ещё проекции и др.
-        {
-            ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
-            
-            Console.WriteLine(pathToPicture);
-            string outputFile = pathToQuicklookCatalog;
-            outputFile += pathToPicture.Substring(pathToPicture.LastIndexOf(@"\"));
-            outputFile = outputFile.Replace("tif", "jpg");
-
-            Console.WriteLine(outputFile);
-
-            Gdal.AllRegister();
-
-            Dataset ds = Gdal.Open(pathToPicture, Access.GA_ReadOnly);
-
-            //ProgressDialog.SetMaximumNumOfImagesComplited(1); //ставим максимум изображений для прогресс бара
-
-            var options =
-                new GDALTranslateOptions(new[]
-                {
-                    "-of", "JPEG",
-                    "-outsize", $"{sizePercent}%", $"{sizePercent}%",
-                    "-co", "WORLDFILE=YES",
-                });
-            try
-            {
-                Dataset newDs = Gdal.wrapper_GDALTranslate(outputFile, ds, options,
-                    new Gdal.GDALProgressFuncDelegate(ProgressFunc), null);
-            }
-            catch
-            {
-
-            }
-        }
-
-        //string a = "Мир";
-        //int g = 0;
-
-        //System.Windows.Forms.MessageBox.Show(string.Format("Привет, {0}! {1:4}", a, g));
-        public void CreateCloseWindowMessageBox()
-        {
-            System.Windows.Forms.MessageBox.Show("dfd");
         }
 
         public static int ProgressFunc(double Complete, IntPtr Message, IntPtr Data)
         {
-            _worker.ReportProgress((int)(100 * Complete));
+            _worker.ReportProgress((int)(100 * Complete)/*, new QuicklookProgress(pathToPicture, numOfPictures)*/);
+            
+            if (ProgressDialog.IsWorkPaused)
+            {
+                CloseConfirm cc = new CloseConfirm();
+                cc.ShowDialog();
+                if (cc.IsAccepted)
+                {
+                    isCanceled = true;
+                    _worker.CancelAsync();
+                    return 0;
+                }
+                else
+                {
+                    ProgressDialog.IsWorkPaused = false;
+                }
+            }
 
             //if (Complete == 0)
             //{
@@ -160,157 +103,331 @@ namespace FindCloud
             return 1;
         }
 
-        private  static BackgroundWorker _worker;
-
-        private int quicklookSize;
-
-        private string pathToQuicklookCatalog;
-
-        private string pathToPicture;
-
-        private void DoWork(object sender, DoWorkEventArgs e)
+        private double CalculatePercent(int maxSize, string InputFile)  //высчитываем, какой процент изображения останется от исходного 
         {
+            double inputFileWidth;
+            double inputFileHeight;
+            double coefficient;
+            double quicklookWidth;
+            double quicklookHeight;
+            //const int optimalSquare = 4000000;  //оптимальная площадь изображения width*height (2000*2000)
+
+            using (FileStream stream = new FileStream(InputFile, FileMode.Open, FileAccess.Read)) //открываем информаци о файле
+            {
+                using (Image tif = Image.FromStream(stream, false, false))
+                {
+                    inputFileWidth = tif.PhysicalDimension.Width;
+                    inputFileHeight = tif.PhysicalDimension.Height;
+                    Console.WriteLine("ширина = " + inputFileWidth);
+                    Console.WriteLine("высота = " + inputFileHeight);
+                }
+            }
+            if (inputFileHeight > inputFileWidth)
+            {
+                quicklookHeight = maxSize;
+                quicklookWidth = (quicklookHeight / inputFileHeight) * inputFileWidth;
+            }
+            else
+            {
+                quicklookWidth = maxSize;
+                quicklookHeight = (quicklookWidth / inputFileWidth) * inputFileHeight;
+            }
+            
+
+            coefficient = Math.Sqrt((quicklookHeight*quicklookWidth) / (inputFileWidth*inputFileHeight));
+            Console.WriteLine(coefficient);
+
+            coefficient = coefficient * 100; //получаем коэффициент в процентах
+            Console.WriteLine(coefficient);
+
+            return coefficient;
+        }
+
+        public bool IsPathValid(string pathToImage, string pathToQuicklookcatalog)
+        {
+            if (File.Exists(pathToImage) || Directory.Exists(pathToImage))
+            {
+
+            }
+            else
+            {
+                MessageBox.Show("Неверный путь файла изображения");
+                return false;
+            }
+
+            if (Directory.Exists(pathToQuicklookcatalog))
+            {
+                return true;
+            }
+            else
+            {
+                MessageBox.Show("Неверный путь для каталога");
+                return false;
+            }
+            
+        }
+
+        public void CreateImage()
+        {
+            if (format.Equals("tiff"))
+            {
+
+
+                Dataset ds = Gdal.Open(pathToPicture, Access.GA_ReadOnly);
+                var options =
+                        new GDALTranslateOptions(new[]
+                        {
+                    "-of", "GTiff",
+                    "-outsize", $"{percent}%", $"{percent}%",
+                    "-co", "WORLDFILE=YES",
+                        });
+                try
+                {
+                    Dataset newDs = Gdal.wrapper_GDALTranslate(outputFile, ds, options,
+                    new Gdal.GDALProgressFuncDelegate(ProgressFunc), null);
+                    newDs.Dispose();
+                }
+                catch
+                {
+
+                }
+            }
+            else if (format.Equals("jpg"))
+            {
+                Dataset ds = Gdal.Open(pathToPicture, Access.GA_ReadOnly);
+                var options =
+                    new GDALTranslateOptions(new[]
+                    {
+                    "-of", "JPEG",
+                    "-outsize", $"{percent}%", $"{percent}%",
+                    "-co", "WORLDFILE=YES",
+                    });
+                try
+                {
+                    Dataset newDs = Gdal.wrapper_GDALTranslate(outputFile, ds, options,
+                    new Gdal.GDALProgressFuncDelegate(ProgressFunc), null);
+                    newDs.Dispose();
+                }
+                catch
+                {
+
+                }
+                
+            }
+        }
+
+        public void CreateQuicklook(string path, string pathToQuicklookCatalog, int quicklookSize, string format) //квиклук из файла или папки с заданной шириной картинки
+        {
+            this.format = format;
+            if(!IsPathValid(path, pathToQuicklookCatalog))
+            {
+                return;
+            }
+            //ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
+            ProgressDialog = new ProgressDialog();
+
+            this.quicklookSize = quicklookSize;
+            this.pathToQuicklookCatalog = pathToQuicklookCatalog;
+            pathToPicture = path;
+
+            if (pathToPicture.Substring(pathToPicture.LastIndexOf(@"\")).Contains(".tif")) //если это tiff-файл
+            {
+                ProgressDialog.DoWork += CreateQuicklookOneImageWidthSize;
+            }
+            else
+            {
+                ProgressDialog.DoWork += CreateQuicklookInDirectoryWidthSize;
+            }
+
+            //ProgressDialog.DoWork += DoWork;
+            ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm);
+            ProgressDialog.StartAsyncTask();
+
+            //ProgressDialog.SetMaximumNumOfImagesComplited(fileNamesMass.Length); //ставим максимум количества изображений для прогресс бара
+
+        }
+        public void CreateQuicklook(string path, string pathToQuicklookCatalog, double percent, string format) //квиклук из файла или папки с заданным процентом
+        {
+            this.format = format;
+            if (!IsPathValid(path, pathToQuicklookCatalog))
+            {
+                return;
+            }
+            ProgressDialog = new ProgressDialog();
+            this.percent = percent;
+            this.pathToQuicklookCatalog = pathToQuicklookCatalog;
+            pathToPicture = path;
+
+            if (pathToPicture.Substring(pathToPicture.LastIndexOf(@"\")).Contains(".tif")) //если это tiff-файл
+            {
+                ProgressDialog.DoWork += CreateQuicklookOneImagePercent;
+            }
+            else
+            {
+                ProgressDialog.DoWork += CreateQuicklookInDirectoryPercent;
+            }
+
+            // ProgressDialog.DoWork += DoWork;
+            ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm);
+            ProgressDialog.StartAsyncTask();
+        }
+
+        public void CreateQuicklookOneImageWidthSize(object sender, DoWorkEventArgs e) //ещё проекции и др.
+        {
+            ProgressDialog.SetImageName(pathToPicture, 1, 0);
+
+            if (quicklookSize != 0) //если задано значение ширины квиклука, то высчитываем процент
+            {
+                percent = CalculatePercent(quicklookSize, pathToPicture);
+            }
+            
+            if (quicklookSize <= 0 || quicklookSize >= 10000)               
+            {
+                throw new Exception("слишом маленький или большой размер квиклука");
+            }
+
+           // ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
+
+            _worker = sender as BackgroundWorker;
+
+            Console.WriteLine(pathToPicture);
+            outputFile = pathToQuicklookCatalog;
+            outputFile += pathToPicture.Substring(pathToPicture.LastIndexOf(@"\"));
+            outputFile = outputFile.Replace("tif", format);
+
+            Console.WriteLine(outputFile);
+
             Gdal.AllRegister();
 
+            CreateImage(); //создаём изображение
+
+            ProgressDialog.SetImageName(pathToPicture, 1, 1);
+
+            if (isCanceled)//удаляем файлы, если отменили создание квиклука
+            {
+                DeleteFiles();
+            }
+        }
+
+
+        
+
+        public void CreateQuicklookOneImagePercent(object sender, DoWorkEventArgs e) //ещё проекции и др.
+        {
+            //ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
+            ProgressDialog.SetImageName(pathToPicture, 1, 0);
+
+            Console.WriteLine(pathToPicture);
+
+            outputFile = pathToQuicklookCatalog;
+            outputFile += pathToPicture.Substring(pathToPicture.LastIndexOf(@"\"));
+            outputFile = outputFile.Replace("tif", format);
+
+            Console.WriteLine(outputFile);
+
+            Gdal.AllRegister();
+
+            _worker = sender as BackgroundWorker;
+
+            CreateImage(); //создаём изображение
+
+            ProgressDialog.SetImageName(pathToPicture, 1, 1);
+
+            if (isCanceled)//удаляем файлы, если отменили создание квиклука
+            {
+                DeleteFiles();
+            }
+        }
+
+       
+
+
+        private void CreateQuicklookInDirectoryWidthSize(object sender, DoWorkEventArgs e)
+        {
+            Gdal.AllRegister();
+            
             if (quicklookSize <= 0 || quicklookSize >= 10000)                           //сделать обработку второго прогресс бара и ещё что-то
             {
                 throw new Exception("слишом маленький или большой размер квиклука");
             }
 
             string[] fileNamesMass = Directory.GetFiles(pathToPicture, "*.tif");
+            
 
-
+            numOfPictures = fileNamesMass.Length;
 
             _worker = sender as BackgroundWorker;
+
+            
 
             //_worker = worker;
 
             for (int i = 0; i < fileNamesMass.Length; i++)
             {
+                if (_worker.CancellationPending == true)
+                {
+                    e.Cancel = true;
+                    break;
+                }
+                pathToPicture = fileNamesMass[i];
 
-                var pct = CalculatePercent(quicklookSize, fileNamesMass[i]);
+                ProgressDialog.SetImageName(fileNamesMass[i], fileNamesMass.Length, i);
+
+                
+                percent = CalculatePercent(quicklookSize, fileNamesMass[i]);
 
                 //Console.WriteLine(fileNamesMass[i]);
 
-                string outputFile = pathToQuicklookCatalog;
+                outputFile = pathToQuicklookCatalog;
                 outputFile += fileNamesMass[i].Substring(fileNamesMass[i].LastIndexOf(@"\"));
-                outputFile = outputFile.Replace("tif", "jpg");
+                outputFile = outputFile.Replace("tif", format);
 
-                Dataset ds = Gdal.Open(fileNamesMass[i], Access.GA_ReadOnly);
-
-                var options =
-                    new GDALTranslateOptions(new[]
-                    {
-                        "-of", "JPEG",
-                        "-outsize", $"{pct}%", $"{pct}%",
-                        "-co", "WORLDFILE=YES",
-                    });
-
-                try
-                {
-                    //ProgressDialog.SetCurrentImage(fileNamesMass[i], i + 1);
-
-                    Dataset newDs = Gdal.wrapper_GDALTranslate(outputFile, ds, options, ProgressFunc, null);
-                }
-                catch (Exception _e)
-                {
-                    System.Windows.Forms.MessageBox.Show(_e.Message);
-                }
+                CreateImage(); //создаём изображение
+                
             }
 
-            //for (int i = 1; i <= 10; i++)
-            //{
-            //    if (worker.CancellationPending == true)
-            //    {
-            //        e.Cancel = true;
-            //        break;
-            //    }
-            //    else
-            //    {
-            //        // Perform a time consuming operation and report progress.
-            //        System.Threading.Thread.Sleep(500);
-            //        worker.ReportProgress(i * 10);
-            //    }
-            //}
+            if (isCanceled)//удаляем файлы, если отменили создание квиклука
+            {
+                DeleteFiles();
+            }
+            
         }
-
-
-
-        public void CreateQuicklookInDirectory(string pathToPicture, string pathToQuicklookCatalog, int quicklookSize) 
+        
+        public void CreateQuicklookInDirectoryPercent(object sender, DoWorkEventArgs e) //ещё проекции и др. //дописать, как предыдущую ф-ю
         {
-
-
-
-
-            //ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
-
-
-            this.quicklookSize = quicklookSize;
-            this.pathToQuicklookCatalog = pathToQuicklookCatalog;
-            this.pathToPicture = pathToPicture;
-
-            ProgressDialog.DoWork += DoWork;
-            ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm);
-            ProgressDialog.StartAsyncTask();
-
-
-
-
-            //ProgressDialog.SetMaximumNumOfImagesComplited(fileNamesMass.Length); //ставим максимум количества изображений для прогресс бара
-
-
-
-        }
-
-        public void CreateQuicklookInDirectory(string pathToPicture, string pathToQuicklookCatalog, double sizePercent = 20) //ещё проекции и др. //дописать, как предыдущую ф-ю
-        {
-            ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
+           // ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
 
             Gdal.AllRegister();
 
             string[] fileNamesMass = Directory.GetFiles(pathToPicture, "*.tif");
 
+            _worker = sender as BackgroundWorker;
+
             //ProgressDialog.SetMaximumNumOfImagesComplited(fileNamesMass.Length); //ставим максимум количества изображений для прогресс бара
 
             for (int i = 0; i < fileNamesMass.Length; i++)
             {
-                //InputFile = fileNamesMass[i];
+                ProgressDialog.SetImageName(fileNamesMass[i], fileNamesMass.Length, i);
+                
+                pathToPicture = fileNamesMass[i];
+
                 Console.WriteLine(fileNamesMass[i]);
 
-                string outputFile = pathToQuicklookCatalog;
+                outputFile = pathToQuicklookCatalog;
                 outputFile += fileNamesMass[i].Substring(fileNamesMass[i].LastIndexOf(@"\"));
-                outputFile = outputFile.Replace("tif", "jpg");
+                outputFile = outputFile.Replace("tif", format);
 
-                Dataset ds = Gdal.Open(fileNamesMass[i], Access.GA_ReadOnly);
+                CreateImage(); //создаём изображение
 
-                var options =
-                    new GDALTranslateOptions(new[]
-                    {
-                    "-of", "JPEG",
-                    "-outsize", $"{sizePercent}%", $"{sizePercent}%",
-                    "-co", "WORLDFILE=YES",
-                    });
+            }
 
-                try
-                {
-                    Dataset newDs = Gdal.wrapper_GDALTranslate(outputFile, ds, options,
-                    new Gdal.GDALProgressFuncDelegate(ProgressFunc), null);
-                }
-                catch
-                {
-
-                }
-
+            if (isCanceled) //удаляем файлы, если отменили создание квиклука
+            {
+                DeleteFiles();
             }
         }
 
-
-        //int oldCompl = 0;
-        //int newCompl;
-
-
-
-
+        
     }
 }
 

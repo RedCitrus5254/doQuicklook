@@ -79,6 +79,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Quicklook.cs" />
+    <Compile Include="QuicklookProgress.cs" />
     <EmbeddedResource Include="CloseConfirm.resx">
       <DependentUpon>CloseConfirm.cs</DependentUpon>
     </EmbeddedResource>

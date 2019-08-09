@@ -52,6 +52,7 @@
             this.yesButton.TabIndex = 1;
             this.yesButton.Text = "Да";
             this.yesButton.UseVisualStyleBackColor = true;
+            this.yesButton.Click += new System.EventHandler(this.YesButton_Click);
             // 
             // cancelButton
             // 
@@ -61,6 +62,7 @@
             this.cancelButton.TabIndex = 2;
             this.cancelButton.Text = "Отмена";
             this.cancelButton.UseVisualStyleBackColor = true;
+            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
             // CloseConfirm
             // 

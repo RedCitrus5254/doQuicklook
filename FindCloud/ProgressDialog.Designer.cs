@@ -30,7 +30,7 @@ namespace FindCloud
         /// </summary>
         private void InitializeComponent()
         {
-            this.quickloolCreatingProgressBar = new System.Windows.Forms.ProgressBar();
+            this.quicklookCreatingProgressBar = new System.Windows.Forms.ProgressBar();
             this.numOfImagesComplited = new System.Windows.Forms.ProgressBar();
             this.numOfImagesLabel = new System.Windows.Forms.Label();
             this.CreatingQuicklookLabel = new System.Windows.Forms.Label();
@@ -38,12 +38,12 @@ namespace FindCloud
             this.quicklookCreatingPercent = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
-            // quickloolCreatingProgressBar
+            // quicklookCreatingProgressBar
             // 
-            this.quickloolCreatingProgressBar.Location = new System.Drawing.Point(12, 79);
-            this.quickloolCreatingProgressBar.Name = "quickloolCreatingProgressBar";
-            this.quickloolCreatingProgressBar.Size = new System.Drawing.Size(318, 23);
-            this.quickloolCreatingProgressBar.TabIndex = 0;
+            this.quicklookCreatingProgressBar.Location = new System.Drawing.Point(12, 79);
+            this.quicklookCreatingProgressBar.Name = "quicklookCreatingProgressBar";
+            this.quicklookCreatingProgressBar.Size = new System.Drawing.Size(318, 23);
+            this.quicklookCreatingProgressBar.TabIndex = 0;
             // 
             // numOfImagesComplited
             // 
@@ -99,7 +99,7 @@ namespace FindCloud
             this.Controls.Add(this.CreatingQuicklookLabel);
             this.Controls.Add(this.numOfImagesLabel);
             this.Controls.Add(this.numOfImagesComplited);
-            this.Controls.Add(this.quickloolCreatingProgressBar);
+            this.Controls.Add(this.quicklookCreatingProgressBar);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
@@ -116,7 +116,7 @@ namespace FindCloud
 
         #endregion
 
-        private System.Windows.Forms.ProgressBar quickloolCreatingProgressBar;
+        private System.Windows.Forms.ProgressBar quicklookCreatingProgressBar;
         private System.Windows.Forms.ProgressBar numOfImagesComplited;
         private System.Windows.Forms.Label numOfImagesLabel;
         private System.Windows.Forms.Label CreatingQuicklookLabel;

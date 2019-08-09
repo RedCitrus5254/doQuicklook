@@ -12,9 +12,22 @@ namespace FindCloud
 {
     public partial class CloseConfirm : Form
     {
+        public bool IsAccepted { get; set; }
         public CloseConfirm()
         {
             InitializeComponent();
+        }
+
+        private void YesButton_Click(object sender, EventArgs e)
+        {
+            IsAccepted = true;
+            this.Close();
+        }
+
+        private void cancelButton_Click(object sender, EventArgs e)
+        {
+            IsAccepted = false;
+            this.Close();
         }
     }
 }

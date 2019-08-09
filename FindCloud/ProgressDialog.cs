@@ -13,15 +13,44 @@ namespace FindCloud
     public partial class ProgressDialog : Form
     {
         private BackgroundWorker backgroundWorker;
+        public bool IsWorkPaused { get; set; } = false;
+
+        private System.ComponentModel.DoWorkEventHandler createQuicklook;
+
+        private QuicklookProgress quicklookProgress = new QuicklookProgress();
+
+
+        public delegate void MyDelegate(string imageName, int numberOfImages, int currentImage);
+
+        public void DelegateMethod(string imageName, int numberOfImages, int currentImage)
+        {
+            numOfImagesLabel.Text = $"Снимок: {imageName}";
+            numOfImagesComplited.Maximum = numberOfImages;
+            numOfImagesComplited.Value = currentImage;
+        }
+
+        public void SetImageName(string imageName, int numberOfImages, int currentImage)
+        {
+            object[] myArray = new object[3];
+
+            myArray[0] = imageName;
+            myArray[1] = numberOfImages;
+            myArray[2] = currentImage;
+            numOfImagesComplited.BeginInvoke(new MyDelegate(DelegateMethod), myArray);
+        }
 
         public ProgressDialog()
         {
             InitializeComponent();
 
+            numOfImagesComplited.Minimum = 0;
+
             backgroundWorker = new BackgroundWorker();
             backgroundWorker.WorkerReportsProgress = true;
-            this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker_ProgressChanged);
+            backgroundWorker.WorkerSupportsCancellation = true;
+            this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker_ProgressChanged);
             this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
+            
         }
 
         // public bool IsCanseled { get; set; } = false;
@@ -36,28 +65,28 @@ namespace FindCloud
         // }
 
         //public void SetMaximumNumOfImagesComplited(int max)
-        // {
-        //     numOfImagesComplited.Maximum = max;
-        //     numOfImagesLabel.Text = $"Снимок: {0}  {numOfImagesComplited.Maximum}";
-        // }
+        //{
+        //    numOfImagesComplited.Maximum = max;
+        //    numOfImagesLabel.Text = $"Снимок: {0}  {numOfImagesComplited.Maximum}";
+        //}
 
-        // public void AddOneToNumOfImagesComplited()
-        // {
-        //     if (numOfImagesComplited.Value < numOfImagesComplited.Maximum)
-        //     {
-        //         numOfImagesComplited.Value += 1;
-        //         numOfImagesLabel.Text = $"Снимок: {numOfImagesComplited.Value}  {numOfImagesComplited.Maximum}";
-        //     }
-        // }
+        //public void AddOneToNumOfImagesComplited()
+        //{
+        //    if (numOfImagesComplited.Value < numOfImagesComplited.Maximum)
+        //    {
+        //        numOfImagesComplited.Value += 1;
+        //        numOfImagesLabel.Text = $"Снимок: {numOfImagesComplited.Value}  {numOfImagesComplited.Maximum}";
+        //    }
+        //}
 
-        // public void SetCurrentImage(string name, int index)
-        // {
-        //     if (index > 0 && index < numOfImagesComplited.Maximum)
-        //     {
-        //         numOfImagesComplited.Value = index;
-        //         numOfImagesLabel.Text = $"Снимок: {name}";
-        //     }
-        // }
+        //public void SetCurrentImage(string name, int index)
+        //{
+        //    if (index > 0 && index < numOfImagesComplited.Maximum)
+        //    {
+        //        numOfImagesComplited.Value = index;
+        //        numOfImagesLabel.Text = $"Снимок: {name}";
+        //    }
+        //}
 
         // public void UpdateProgress(int complete)
         // {
@@ -78,15 +107,15 @@ namespace FindCloud
         {
             get
             {
-                return _fff;
+                return createQuicklook;
             }
             set
             {
-                _fff = value;
+                createQuicklook = value;
                 backgroundWorker.DoWork += value;
             }
         }
-        private System.ComponentModel.DoWorkEventHandler _fff;
+        
 
 
         //private void Form1_Load(object sender, EventArgs e)
@@ -98,7 +127,9 @@ namespace FindCloud
         {
             if (backgroundWorker.WorkerSupportsCancellation == true)
             {
-                backgroundWorker.CancelAsync();
+                IsWorkPaused = true;
+                
+                
             }
         }
 
@@ -106,18 +137,27 @@ namespace FindCloud
         {
             if (backgroundWorker.IsBusy != true)
             {
-                backgroundWorker.RunWorkerAsync();
+                backgroundWorker.RunWorkerAsync(quicklookProgress);
             }
         }
 
-        private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        private void BackgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            quickloolCreatingProgressBar.Value = e.ProgressPercentage;
+            //numOfImagesLabel.Text = $"Снимок: {((QuicklookProgress)e.UserState).NameOfImage}";
+            //numOfImagesComplited.Maximum = ((QuicklookProgress)e.UserState).NumOfImages;
+
+            quicklookCreatingProgressBar.Value = e.ProgressPercentage;
+            quicklookCreatingPercent.Text = $"{e.ProgressPercentage}%";
+
+            //if(quicklookCreatingProgressBar.Value == 100)
+            //{
+            //    numOfImagesComplited.Value += 1;
+            //}
         }
 
         private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-
+            this.Close();
         }
 
         private void ProgressDialog_Load(object sender, EventArgs e)
