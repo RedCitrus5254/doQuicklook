@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.createQuicklookButton = new System.Windows.Forms.Button();
             this.openFileLabel = new System.Windows.Forms.Label();
             this.pathToImage = new System.Windows.Forms.TextBox();
@@ -42,7 +43,16 @@
             this.radioButtonsPanel = new System.Windows.Forms.Panel();
             this.tiffRadioButton = new System.Windows.Forms.RadioButton();
             this.jpgRadioButton = new System.Windows.Forms.RadioButton();
+            this.pathToImageToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.widthSizeToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.percentToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.setImageFormatToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.pathToQuicklookCatalogToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.setFileOrFolderRadioButtonsPanel = new System.Windows.Forms.Panel();
+            this.setOneFileRadioButton = new System.Windows.Forms.RadioButton();
+            this.setFolderRadioButton = new System.Windows.Forms.RadioButton();
             this.radioButtonsPanel.SuspendLayout();
+            this.setFileOrFolderRadioButtonsPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // createQuicklookButton
@@ -136,9 +146,9 @@
             this.widthSizeLabel.AutoSize = true;
             this.widthSizeLabel.Location = new System.Drawing.Point(32, 167);
             this.widthSizeLabel.Name = "widthSizeLabel";
-            this.widthSizeLabel.Size = new System.Drawing.Size(46, 13);
+            this.widthSizeLabel.Size = new System.Drawing.Size(49, 13);
             this.widthSizeLabel.TabIndex = 9;
-            this.widthSizeLabel.Text = "Ширина";
+            this.widthSizeLabel.Text = "Сторона";
             // 
             // percentLabel
             // 
@@ -183,11 +193,44 @@
             this.jpgRadioButton.UseVisualStyleBackColor = true;
             this.jpgRadioButton.CheckedChanged += new System.EventHandler(this.JpgRadioButton_CheckedChanged);
             // 
+            // setFileOrFolderRadioButtonsPanel
+            // 
+            this.setFileOrFolderRadioButtonsPanel.Controls.Add(this.setFolderRadioButton);
+            this.setFileOrFolderRadioButtonsPanel.Controls.Add(this.setOneFileRadioButton);
+            this.setFileOrFolderRadioButtonsPanel.Location = new System.Drawing.Point(284, 12);
+            this.setFileOrFolderRadioButtonsPanel.Name = "setFileOrFolderRadioButtonsPanel";
+            this.setFileOrFolderRadioButtonsPanel.Size = new System.Drawing.Size(122, 39);
+            this.setFileOrFolderRadioButtonsPanel.TabIndex = 12;
+            // 
+            // setOneFileRadioButton
+            // 
+            this.setOneFileRadioButton.AutoSize = true;
+            this.setOneFileRadioButton.Location = new System.Drawing.Point(0, 0);
+            this.setOneFileRadioButton.Name = "setOneFileRadioButton";
+            this.setOneFileRadioButton.Size = new System.Drawing.Size(125, 17);
+            this.setOneFileRadioButton.TabIndex = 0;
+            this.setOneFileRadioButton.TabStop = true;
+            this.setOneFileRadioButton.Text = "Выбрать один файл";
+            this.setOneFileRadioButton.UseVisualStyleBackColor = true;
+            // 
+            // setFolderRadioButton
+            // 
+            this.setFolderRadioButton.AutoSize = true;
+            this.setFolderRadioButton.Checked = true;
+            this.setFolderRadioButton.Location = new System.Drawing.Point(0, 23);
+            this.setFolderRadioButton.Name = "setFolderRadioButton";
+            this.setFolderRadioButton.Size = new System.Drawing.Size(101, 17);
+            this.setFolderRadioButton.TabIndex = 1;
+            this.setFolderRadioButton.TabStop = true;
+            this.setFolderRadioButton.Text = "Выбрать папку";
+            this.setFolderRadioButton.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(434, 221);
+            this.Controls.Add(this.setFileOrFolderRadioButtonsPanel);
             this.Controls.Add(this.radioButtonsPanel);
             this.Controls.Add(this.percentLabel);
             this.Controls.Add(this.widthSizeLabel);
@@ -207,6 +250,8 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.radioButtonsPanel.ResumeLayout(false);
             this.radioButtonsPanel.PerformLayout();
+            this.setFileOrFolderRadioButtonsPanel.ResumeLayout(false);
+            this.setFileOrFolderRadioButtonsPanel.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -228,5 +273,13 @@
         private System.Windows.Forms.Panel radioButtonsPanel;
         private System.Windows.Forms.RadioButton jpgRadioButton;
         private System.Windows.Forms.RadioButton tiffRadioButton;
+        private System.Windows.Forms.ToolTip pathToImageToolTip;
+        private System.Windows.Forms.ToolTip widthSizeToolTip;
+        private System.Windows.Forms.ToolTip percentToolTip;
+        private System.Windows.Forms.ToolTip setImageFormatToolTip;
+        private System.Windows.Forms.ToolTip pathToQuicklookCatalogToolTip;
+        private System.Windows.Forms.Panel setFileOrFolderRadioButtonsPanel;
+        private System.Windows.Forms.RadioButton setFolderRadioButton;
+        private System.Windows.Forms.RadioButton setOneFileRadioButton;
     }
 }

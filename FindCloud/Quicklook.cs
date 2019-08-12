@@ -39,6 +39,9 @@ namespace FindCloud
 
         private string format;
 
+        private bool overwriteImage = true;
+
+        private bool isForAll = false;
 
 
         private static ProgressDialog ProgressDialog { get; set; } /*= new ProgressDialog();*/
@@ -295,6 +298,14 @@ namespace FindCloud
             outputFile += pathToPicture.Substring(pathToPicture.LastIndexOf(@"\"));
             outputFile = outputFile.Replace("tif", format);
 
+            if (IsFileInCatalog(outputFile))//проверяем, есть ли в каталоге квиклуков это изображение
+            {
+                if (!overwriteImage)
+                {
+                    return;
+                }
+            }
+
             Console.WriteLine(outputFile);
 
             Gdal.AllRegister();
@@ -323,6 +334,14 @@ namespace FindCloud
             outputFile += pathToPicture.Substring(pathToPicture.LastIndexOf(@"\"));
             outputFile = outputFile.Replace("tif", format);
 
+            if (IsFileInCatalog(outputFile)) //проверяем, есть ли в каталоге квиклуков это изображение
+            {
+                if (!overwriteImage)
+                {
+                    return;
+                }
+            }
+
             Console.WriteLine(outputFile);
 
             Gdal.AllRegister();
@@ -341,7 +360,39 @@ namespace FindCloud
 
        
 
+        private bool IsFileInCatalog(string path) //проверяет, есть ли файл в каталоге квиклуков и предлагает перезаписать его или оставить; перезаписать все или оставить все
+        {
+            
+            if (File.Exists(path))
+            {
+                if (isForAll) //если уже была поставлена галочка выполнять для всех, пропустить эти инструкции
+                {
+                    return true;
+                }
+                OverwriteFile of = new OverwriteFile();
+                of.ChangeText(path);
+                of.ShowDialog();
+                if (of.IsAccepted)
+                {
+                    overwriteImage = true;
+                }
+                else
+                {
+                    overwriteImage = false;
+                }
+                if (of.IsForAll)
+                {
+                    isForAll = true;
+                }
+                return true;
+                
+            }
+            else
+            {
+                return false;
 
+            }
+        }
         private void CreateQuicklookInDirectoryWidthSize(object sender, DoWorkEventArgs e)
         {
             Gdal.AllRegister();
@@ -372,7 +423,6 @@ namespace FindCloud
                 pathToPicture = fileNamesMass[i];
 
                 ProgressDialog.SetImageName(fileNamesMass[i], fileNamesMass.Length, i);
-
                 
                 percent = CalculatePercent(quicklookSize, fileNamesMass[i]);
 
@@ -381,6 +431,15 @@ namespace FindCloud
                 outputFile = pathToQuicklookCatalog;
                 outputFile += fileNamesMass[i].Substring(fileNamesMass[i].LastIndexOf(@"\"));
                 outputFile = outputFile.Replace("tif", format);
+
+                if (IsFileInCatalog(outputFile)) //проверяем, есть ли в каталоге квиклуков эти изображения
+                {
+                    if (!overwriteImage)
+                    {
+                        continue;
+                    }
+                }
+                
 
                 CreateImage(); //создаём изображение
                 
@@ -416,6 +475,14 @@ namespace FindCloud
                 outputFile = pathToQuicklookCatalog;
                 outputFile += fileNamesMass[i].Substring(fileNamesMass[i].LastIndexOf(@"\"));
                 outputFile = outputFile.Replace("tif", format);
+
+                if (IsFileInCatalog(outputFile)) //проверяем, есть ли в каталоге квиклуков эти изображения
+                {
+                    if (!overwriteImage)
+                    {
+                        continue;
+                    }
+                }
 
                 CreateImage(); //создаём изображение
 

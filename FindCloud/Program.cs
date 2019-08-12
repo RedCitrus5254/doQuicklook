@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OSGeo.GDAL;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace FindCloud
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            Gdal.AllRegister();
             Application.Run(new MainForm());
         }
     }

@@ -17,7 +17,11 @@ namespace FindCloud
         public MainForm()
         {
             InitializeComponent();
-
+            pathToImageToolTip.SetToolTip(pathToImage, "Путь к папке с изображениями");
+            pathToQuicklookCatalogToolTip.SetToolTip(pathToQuicklookCatalog, "Путь к папке, в которую будут сохраняться квиклуки");
+            widthSizeToolTip.SetToolTip(widthSizeTextBox, "Задать размер наибольшей стороны квиклука");
+            percentToolTip.SetToolTip(percentTextBox, "Задать размер квиклука в процентах от исходного изображения");
+            setImageFormatToolTip.SetToolTip(radioButtonsPanel, "Выберите расширение квиклука");
             
         }
 
@@ -84,41 +88,49 @@ namespace FindCloud
 
         private void SelectPathToImageButton_Click(object sender, EventArgs e)
         {
-            using(OpenFileDialog openFileDialog = new OpenFileDialog())
+            if (setOneFileRadioButton.Checked)
             {
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
                 {
-                    try
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
                     {
-                        pathToImage.Text = openFileDialog.FileName;
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Big terrible error.\n\nError message: {ex.Message}\n\n" +
-                        $"Details:\n\n{ex.StackTrace}");
+                        try
+                        {
+                            pathToImage.Text = openFileDialog.FileName;
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Big terrible error.\n\nError message: {ex.Message}\n\n" +
+                            $"Details:\n\n{ex.StackTrace}");
+                        }
                     }
                 }
             }
-            
+            else
+            {
+                pathToImage.Text = Cataloguer.FolderBrowser.ChooseFolder(this);
+            }
         }
 
         private void SelectPathToQuicklookCatalog_Click(object sender, EventArgs e)
         {
-            using(FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
-            {
-                if(folderBrowserDialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        pathToQuicklookCatalog.Text = folderBrowserDialog.SelectedPath;
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Big terrible error.\n\nError message: {ex.Message}\n\n" +
-                        $"Details:\n\n{ex.StackTrace}");
-                    }
-                }
-            }
+            pathToQuicklookCatalog.Text = Cataloguer.FolderBrowser.ChooseFolder(this);
+
+            //using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
+            //{
+            //    if(folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            //    {
+            //        try
+            //        {
+            //            pathToQuicklookCatalog.Text = folderBrowserDialog.SelectedPath;
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            MessageBox.Show($"Big terrible error.\n\nError message: {ex.Message}\n\n" +
+            //            $"Details:\n\n{ex.StackTrace}");
+            //        }
+            //    }
+            //}
         }
 
         private void WidthSizeTextBox_Click(object sender, EventArgs e)
