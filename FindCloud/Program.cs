@@ -19,7 +19,6 @@ namespace FindCloud
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Gdal.AllRegister();
             Application.Run(new MainForm());
         }
     }

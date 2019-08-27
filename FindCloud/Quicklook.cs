@@ -23,9 +23,9 @@ namespace FindCloud
 
         private static BackgroundWorker _worker;
 
-        private static ManualResetEvent mre = new ManualResetEvent(false);
-
         private int quicklookSize;
+
+        private int square;
 
         private string pathToQuicklookCatalog;
 
@@ -43,6 +43,8 @@ namespace FindCloud
 
         private bool isForAll = false;
 
+        public bool GoDirectories { get; set; } = false;
+        
 
         private static ProgressDialog ProgressDialog { get; set; } /*= new ProgressDialog();*/
 
@@ -52,6 +54,8 @@ namespace FindCloud
         {
 
         }
+
+        
         
         public void DeleteFiles()
         {
@@ -59,7 +63,7 @@ namespace FindCloud
             string rootFolderPath = pathToQuicklookCatalog;
             string filesToDelete = outputFile.Substring(outputFile.LastIndexOf(@"\")+1);   
             filesToDelete = filesToDelete.Replace(".jpg", ""); //оставляем только имя файла без разрешения
-            Console.WriteLine(filesToDelete);
+            Console.WriteLine("удалён " + filesToDelete);
             string[] fileList = System.IO.Directory.GetFiles(rootFolderPath, filesToDelete); //ищем такие файлы
             foreach (string file in fileList)
             {
@@ -88,22 +92,35 @@ namespace FindCloud
                 }
             }
 
-            //if (Complete == 0)
-            //{
-            //    ProgressDialog = new ProgressDialog();
-            //    ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
-            //}
-
-            //ProgressDialog.UpdateProgress((int)(Complete * 100));
-
-            //ProgressDialog.Refresh();
-
-            //if (Complete == 1) //если создали квиклук, обновляем прогресс бар количества изображений
-            //{
-            //    ProgressDialog.AddOneToNumOfImagesComplited();
-            //}
-
             return 1;
+        }
+
+        private double CalculateSquare(int s)
+        {
+            double inputFileWidth;
+            double inputFileHeight;
+            double coefficient;
+            using (FileStream stream = new FileStream(pathToPicture, FileMode.Open, FileAccess.Read)) //открываем информаци о файле
+            {
+                using (Image tif = Image.FromStream(stream, false, false))
+                {
+                    inputFileWidth = tif.PhysicalDimension.Width;
+                    inputFileHeight = tif.PhysicalDimension.Height;
+                    Console.WriteLine("ширина = " + inputFileWidth);
+                    Console.WriteLine("высота = " + inputFileHeight);
+                }
+            }
+
+            coefficient = Math.Sqrt(s / (inputFileHeight * inputFileWidth))*100;
+            if (coefficient > 100)
+            {
+                return 100;
+            }
+            else
+            {
+                return coefficient;
+            }
+
         }
 
         private double CalculatePercent(int maxSize, string InputFile)  //высчитываем, какой процент изображения останется от исходного 
@@ -146,6 +163,40 @@ namespace FindCloud
             return coefficient;
         }
 
+        private bool IsFileInCatalog(string path) //проверяет, есть ли файл в каталоге квиклуков и предлагает перезаписать его или оставить; перезаписать все или оставить все
+        {
+
+            if (File.Exists(path))
+            {
+                if (isForAll) //если уже была поставлена галочка выполнять для всех, пропустить эти инструкции
+                {
+                    return true;
+                }
+                OverwriteFile of = new OverwriteFile();
+                of.ChangeText(path);
+                of.ShowDialog();
+                if (of.IsAccepted)
+                {
+                    overwriteImage = true;
+                }
+                else
+                {
+                    overwriteImage = false;
+                }
+                if (of.IsForAll)
+                {
+                    isForAll = true;
+                }
+                return true;
+
+            }
+            else
+            {
+                return false;
+
+            }
+        }
+
         public bool IsPathValid(string pathToImage, string pathToQuicklookcatalog)
         {
             if (File.Exists(pathToImage) || Directory.Exists(pathToImage))
@@ -172,7 +223,7 @@ namespace FindCloud
 
         public void CreateImage()
         {
-            if (format.Equals("tiff"))
+            if (format.Equals("tif"))
             {
 
 
@@ -217,6 +268,41 @@ namespace FindCloud
                 }
                 
             }
+        }
+        public void CreateQuicklook(string path, string pathToQuicklookCatalog, string square, string format)
+        {
+            this.format = format;
+            if (!IsPathValid(path, pathToQuicklookCatalog))
+            {
+                return;
+            }
+            //ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
+            ProgressDialog = new ProgressDialog();
+            try
+            {
+                this.square = Convert.ToInt32(square);
+            }
+            catch
+            {
+                MessageBox.Show("Неверное значение площади");
+                return;
+            }
+            
+            this.pathToQuicklookCatalog = pathToQuicklookCatalog;
+            pathToPicture = path;
+
+            if (pathToPicture.Substring(pathToPicture.LastIndexOf(@"\")).Contains(".tif")) //если это tiff-файл
+            {
+                ProgressDialog.DoWork += CreateQuicklookOneImageSquare;
+            }
+            else
+            {
+                ProgressDialog.DoWork += CreateQuicklookInDirectorySquare;
+            }
+
+            //ProgressDialog.DoWork += DoWork;
+            ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm);
+            ProgressDialog.StartAsyncTask();
         }
 
         public void CreateQuicklook(string path, string pathToQuicklookCatalog, int quicklookSize, string format) //квиклук из файла или папки с заданной шириной картинки
@@ -308,7 +394,14 @@ namespace FindCloud
 
             Console.WriteLine(outputFile);
 
-            Gdal.AllRegister();
+            try
+            {
+                Gdal.AllRegister();
+            }
+            catch
+            {
+                MessageBox.Show("Что-то не так с библиотекой gdal");
+            }
 
             CreateImage(); //создаём изображение
 
@@ -344,8 +437,14 @@ namespace FindCloud
 
             Console.WriteLine(outputFile);
 
-            Gdal.AllRegister();
-
+            try
+            {
+                Gdal.AllRegister();
+            }
+            catch
+            {
+                MessageBox.Show("Что-то не так с библиотекой gdal");
+            }
             _worker = sender as BackgroundWorker;
 
             CreateImage(); //создаём изображение
@@ -358,73 +457,104 @@ namespace FindCloud
             }
         }
 
-       
-
-        private bool IsFileInCatalog(string path) //проверяет, есть ли файл в каталоге квиклуков и предлагает перезаписать его или оставить; перезаписать все или оставить все
+        public void CreateQuicklookOneImageSquare(object sender, DoWorkEventArgs e)
         {
-            
-            if (File.Exists(path))
-            {
-                if (isForAll) //если уже была поставлена галочка выполнять для всех, пропустить эти инструкции
-                {
-                    return true;
-                }
-                OverwriteFile of = new OverwriteFile();
-                of.ChangeText(path);
-                of.ShowDialog();
-                if (of.IsAccepted)
-                {
-                    overwriteImage = true;
-                }
-                else
-                {
-                    overwriteImage = false;
-                }
-                if (of.IsForAll)
-                {
-                    isForAll = true;
-                }
-                return true;
-                
-            }
-            else
-            {
-                return false;
+            ProgressDialog.SetImageName(pathToPicture, 1, 0);
 
-            }
-        }
-        private void CreateQuicklookInDirectoryWidthSize(object sender, DoWorkEventArgs e)
-        {
-            Gdal.AllRegister();
-            
-            if (quicklookSize <= 0 || quicklookSize >= 10000)                           //сделать обработку второго прогресс бара и ещё что-то
+            percent = CalculateSquare(square);
+
+
+            if (square <= 0 || square >= 100000000)
             {
                 throw new Exception("слишом маленький или большой размер квиклука");
             }
 
-            string[] fileNamesMass = Directory.GetFiles(pathToPicture, "*.tif");
-            
-
-            numOfPictures = fileNamesMass.Length;
+            // ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
 
             _worker = sender as BackgroundWorker;
 
+            Console.WriteLine(pathToPicture);
+            outputFile = pathToQuicklookCatalog;
+            outputFile += pathToPicture.Substring(pathToPicture.LastIndexOf(@"\"));
+            outputFile = outputFile.Replace("tif", format);
+
+            if (IsFileInCatalog(outputFile))//проверяем, есть ли в каталоге квиклуков это изображение
+            {
+                if (!overwriteImage)
+                {
+                    return;
+                }
+            }
+
+            Console.WriteLine(outputFile);
+
+            try
+            {
+                Gdal.AllRegister();
+            }
+            catch
+            {
+                MessageBox.Show("Что-то не так с библиотекой gdal");
+            }
+
+            CreateImage(); //создаём изображение
+
+            ProgressDialog.SetImageName(pathToPicture, 1, 1);
+
+            if (isCanceled)//удаляем файлы, если отменили создание квиклука
+            {
+                DeleteFiles();
+            }
+        }
+
+        private void GoToDirectories(string path, string quicklookType) //принимает путь к директории -- path
+        {
+            if (GoDirectories == true)
+            {
+                string[] directories = Directory.GetDirectories(path);
+
+                if (directories.Length != 0)
+                {
+                    foreach (string dir in directories)
+                    {
+                        if (dir.Substring(dir.LastIndexOf(@"\")).Equals(@"\Quicklook"))
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            GoToDirectories(dir, quicklookType);
+                        }
+                    }
+                }
+            }
             
 
-            //_worker = worker;
+            string[] fileNamesMass = Directory.GetFiles(path, "*.tif");
+            numOfPictures = fileNamesMass.Length;
+
 
             for (int i = 0; i < fileNamesMass.Length; i++)
             {
                 if (_worker.CancellationPending == true)
                 {
-                    e.Cancel = true;
+                    //e.Cancel = true;
                     break;
                 }
                 pathToPicture = fileNamesMass[i];
 
                 ProgressDialog.SetImageName(fileNamesMass[i], fileNamesMass.Length, i);
+
+                if (quicklookType.Equals("quicklookSize"))
+                {
+                    percent = CalculatePercent(quicklookSize, fileNamesMass[i]);
+                }
+                else if (quicklookType.Equals("square"))
+                {
+                    percent = CalculateSquare(square);
+                }
                 
-                percent = CalculatePercent(quicklookSize, fileNamesMass[i]);
+                
 
                 //Console.WriteLine(fileNamesMass[i]);
 
@@ -439,62 +569,90 @@ namespace FindCloud
                         continue;
                     }
                 }
-                
 
                 CreateImage(); //создаём изображение
-                
             }
 
+        }
+       
+        private void CreateQuicklookInDirectoryWidthSize(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                Gdal.AllRegister();
+            }
+            catch
+            {
+                MessageBox.Show("Что-то не так с библиотекой gdal");
+            }
+
+
+             _worker = sender as BackgroundWorker;
+
+            
+             GoToDirectories(pathToPicture, "quicklookSize");
+           
+            
             if (isCanceled)//удаляем файлы, если отменили создание квиклука
             {
                 DeleteFiles();
             }
             
         }
+
         
         public void CreateQuicklookInDirectoryPercent(object sender, DoWorkEventArgs e) //ещё проекции и др. //дописать, как предыдущую ф-ю
         {
-           // ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
+            // ProgressDialog.Show(System.Windows.Forms.Form.ActiveForm); //показываем процесс создания квиклука
 
-            Gdal.AllRegister();
+            try
+            {
+                Gdal.AllRegister();
+            }
+            catch
+            {
+                MessageBox.Show("Что-то не так с библиотекой gdal");
+            }
 
-            string[] fileNamesMass = Directory.GetFiles(pathToPicture, "*.tif");
+            
 
             _worker = sender as BackgroundWorker;
-
-            //ProgressDialog.SetMaximumNumOfImagesComplited(fileNamesMass.Length); //ставим максимум количества изображений для прогресс бара
-
-            for (int i = 0; i < fileNamesMass.Length; i++)
-            {
-                ProgressDialog.SetImageName(fileNamesMass[i], fileNamesMass.Length, i);
-                
-                pathToPicture = fileNamesMass[i];
-
-                Console.WriteLine(fileNamesMass[i]);
-
-                outputFile = pathToQuicklookCatalog;
-                outputFile += fileNamesMass[i].Substring(fileNamesMass[i].LastIndexOf(@"\"));
-                outputFile = outputFile.Replace("tif", format);
-
-                if (IsFileInCatalog(outputFile)) //проверяем, есть ли в каталоге квиклуков эти изображения
-                {
-                    if (!overwriteImage)
-                    {
-                        continue;
-                    }
-                }
-
-                CreateImage(); //создаём изображение
-
-            }
+            
+            
+            GoToDirectories(pathToPicture, "percent");
+            
 
             if (isCanceled) //удаляем файлы, если отменили создание квиклука
             {
                 DeleteFiles();
             }
         }
+        public void CreateQuicklookInDirectorySquare(object sender, DoWorkEventArgs e)
+        {
 
-        
+            try
+            {
+                Gdal.AllRegister();
+            }
+            catch
+            {
+                MessageBox.Show("Что-то не так с библиотекой gdal");
+            }
+
+
+            _worker = sender as BackgroundWorker;
+
+
+            GoToDirectories(pathToPicture, "square");
+
+
+            if (isCanceled)//удаляем файлы, если отменили создание квиклука
+            {
+                DeleteFiles();
+            }
+        }
+
+
     }
 }
 

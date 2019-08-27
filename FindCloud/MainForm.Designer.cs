@@ -49,8 +49,11 @@
             this.setImageFormatToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.pathToQuicklookCatalogToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.setFileOrFolderRadioButtonsPanel = new System.Windows.Forms.Panel();
-            this.setOneFileRadioButton = new System.Windows.Forms.RadioButton();
             this.setFolderRadioButton = new System.Windows.Forms.RadioButton();
+            this.setOneFileRadioButton = new System.Windows.Forms.RadioButton();
+            this.subdirectoryCheckBox = new System.Windows.Forms.CheckBox();
+            this.squareTextBox = new System.Windows.Forms.TextBox();
+            this.squareLabel = new System.Windows.Forms.Label();
             this.radioButtonsPanel.SuspendLayout();
             this.setFileOrFolderRadioButtonsPanel.SuspendLayout();
             this.SuspendLayout();
@@ -126,7 +129,7 @@
             // 
             // widthSizeTextBox
             // 
-            this.widthSizeTextBox.Location = new System.Drawing.Point(35, 183);
+            this.widthSizeTextBox.Location = new System.Drawing.Point(35, 176);
             this.widthSizeTextBox.Name = "widthSizeTextBox";
             this.widthSizeTextBox.Size = new System.Drawing.Size(54, 20);
             this.widthSizeTextBox.TabIndex = 7;
@@ -135,7 +138,7 @@
             // 
             // percentTextBox
             // 
-            this.percentTextBox.Location = new System.Drawing.Point(132, 183);
+            this.percentTextBox.Location = new System.Drawing.Point(132, 176);
             this.percentTextBox.Name = "percentTextBox";
             this.percentTextBox.Size = new System.Drawing.Size(52, 20);
             this.percentTextBox.TabIndex = 8;
@@ -144,16 +147,17 @@
             // widthSizeLabel
             // 
             this.widthSizeLabel.AutoSize = true;
-            this.widthSizeLabel.Location = new System.Drawing.Point(32, 167);
+            this.widthSizeLabel.Location = new System.Drawing.Point(32, 158);
             this.widthSizeLabel.Name = "widthSizeLabel";
             this.widthSizeLabel.Size = new System.Drawing.Size(49, 13);
             this.widthSizeLabel.TabIndex = 9;
             this.widthSizeLabel.Text = "Сторона";
+            this.widthSizeLabel.Click += new System.EventHandler(this.widthSizeLabel_Click);
             // 
             // percentLabel
             // 
             this.percentLabel.AutoSize = true;
-            this.percentLabel.Location = new System.Drawing.Point(129, 167);
+            this.percentLabel.Location = new System.Drawing.Point(129, 158);
             this.percentLabel.Name = "percentLabel";
             this.percentLabel.Size = new System.Drawing.Size(50, 13);
             this.percentLabel.TabIndex = 10;
@@ -202,17 +206,6 @@
             this.setFileOrFolderRadioButtonsPanel.Size = new System.Drawing.Size(122, 39);
             this.setFileOrFolderRadioButtonsPanel.TabIndex = 12;
             // 
-            // setOneFileRadioButton
-            // 
-            this.setOneFileRadioButton.AutoSize = true;
-            this.setOneFileRadioButton.Location = new System.Drawing.Point(0, 0);
-            this.setOneFileRadioButton.Name = "setOneFileRadioButton";
-            this.setOneFileRadioButton.Size = new System.Drawing.Size(125, 17);
-            this.setOneFileRadioButton.TabIndex = 0;
-            this.setOneFileRadioButton.TabStop = true;
-            this.setOneFileRadioButton.Text = "Выбрать один файл";
-            this.setOneFileRadioButton.UseVisualStyleBackColor = true;
-            // 
             // setFolderRadioButton
             // 
             this.setFolderRadioButton.AutoSize = true;
@@ -225,11 +218,53 @@
             this.setFolderRadioButton.Text = "Выбрать папку";
             this.setFolderRadioButton.UseVisualStyleBackColor = true;
             // 
+            // setOneFileRadioButton
+            // 
+            this.setOneFileRadioButton.AutoSize = true;
+            this.setOneFileRadioButton.Location = new System.Drawing.Point(0, 0);
+            this.setOneFileRadioButton.Name = "setOneFileRadioButton";
+            this.setOneFileRadioButton.Size = new System.Drawing.Size(125, 17);
+            this.setOneFileRadioButton.TabIndex = 0;
+            this.setOneFileRadioButton.TabStop = true;
+            this.setOneFileRadioButton.Text = "Выбрать один файл";
+            this.setOneFileRadioButton.UseVisualStyleBackColor = true;
+            // 
+            // subdirectoryCheckBox
+            // 
+            this.subdirectoryCheckBox.AutoSize = true;
+            this.subdirectoryCheckBox.Location = new System.Drawing.Point(172, 22);
+            this.subdirectoryCheckBox.Name = "subdirectoryCheckBox";
+            this.subdirectoryCheckBox.Size = new System.Drawing.Size(92, 17);
+            this.subdirectoryCheckBox.TabIndex = 13;
+            this.subdirectoryCheckBox.Text = "Подкаталоги";
+            this.subdirectoryCheckBox.UseVisualStyleBackColor = true;
+            this.subdirectoryCheckBox.CheckedChanged += new System.EventHandler(this.subdirectoryCheckBox_CheckedChanged);
+            // 
+            // squareTextBox
+            // 
+            this.squareTextBox.Location = new System.Drawing.Point(35, 215);
+            this.squareTextBox.Name = "squareTextBox";
+            this.squareTextBox.Size = new System.Drawing.Size(92, 20);
+            this.squareTextBox.TabIndex = 14;
+            this.squareTextBox.Click += new System.EventHandler(this.SquareTextBox_Click);
+            // 
+            // squareLabel
+            // 
+            this.squareLabel.AutoSize = true;
+            this.squareLabel.Location = new System.Drawing.Point(32, 199);
+            this.squareLabel.Name = "squareLabel";
+            this.squareLabel.Size = new System.Drawing.Size(54, 13);
+            this.squareLabel.TabIndex = 15;
+            this.squareLabel.Text = "Площадь";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(434, 221);
+            this.ClientSize = new System.Drawing.Size(434, 243);
+            this.Controls.Add(this.squareLabel);
+            this.Controls.Add(this.squareTextBox);
+            this.Controls.Add(this.subdirectoryCheckBox);
             this.Controls.Add(this.setFileOrFolderRadioButtonsPanel);
             this.Controls.Add(this.radioButtonsPanel);
             this.Controls.Add(this.percentLabel);
@@ -281,5 +316,8 @@
         private System.Windows.Forms.Panel setFileOrFolderRadioButtonsPanel;
         private System.Windows.Forms.RadioButton setFolderRadioButton;
         private System.Windows.Forms.RadioButton setOneFileRadioButton;
+        private System.Windows.Forms.CheckBox subdirectoryCheckBox;
+        private System.Windows.Forms.TextBox squareTextBox;
+        private System.Windows.Forms.Label squareLabel;
     }
 }

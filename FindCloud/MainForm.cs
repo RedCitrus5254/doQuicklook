@@ -13,6 +13,7 @@ namespace FindCloud
 {
     public partial class MainForm : Form
     {
+       
         private string format = "jpg";
         public MainForm()
         {
@@ -30,52 +31,143 @@ namespace FindCloud
 
         }
 
+        
+        private void CreateQuicklookCatalog() //проверяет, существует ли папка с квиклуками в папке с изображениями, если напрямую не указана папка квиклуков. Если нет, пишет в 
+        {                                     //textbox путь к каталогу квиклуков, и при нажатии на кнопку создания квиклука создаёт каталог
+            string quicklookPath;
+            if (pathToQuicklookCatalog.Text.Equals(""))
+            {
+                FileAttributes attr = File.GetAttributes(pathToImage.Text);
+
+                //detect whether its a directory or file
+                if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+                {
+                    quicklookPath = pathToImage.Text;
+                    Console.WriteLine(quicklookPath);
+                }
+                else
+                {
+                    quicklookPath = Path.GetDirectoryName(pathToImage.Text);
+                    Console.WriteLine(quicklookPath);
+                }
+                quicklookPath += @"\QuickLook";
+                
+                
+                pathToQuicklookCatalog.Text = quicklookPath;
+                    
+            
+                //if (pathToImage.Text.Contains(".tif"))
+                //{
+                //    quicklookPath = pathToImage.Text.Replace(pathToImage.Text.Substring(pathToImage.Text.LastIndexOf(@"\")), "");
+                //    Console.WriteLine(quicklookPath);
+                //}
+            }
+            else
+            {
+                return;
+            }
+        }
         private void CreateQuicklookButton_Click(object sender, EventArgs e)
         {
-            
-            if (widthSizeTextBox.Text.Equals("") && percentTextBox.Text.Equals(""))
+            if (pathToImage.Text.Equals(""))
             {
-                MessageBox.Show($"Неверные значения полей {widthSizeLabel.Text} или {percentLabel.Text}");
+                MessageBox.Show("Выберите путь к изображениям");
+                return;
+            }
+            
+            if (widthSizeTextBox.Text.Equals("") && percentTextBox.Text.Equals("")&&squareTextBox.Text.Equals(""))
+            {
+                MessageBox.Show($"Неверные значения полей {widthSizeLabel.Text} или {percentLabel.Text} или {squareLabel.Text}");
             }
             else
             {
                 
-                if (widthSizeTextBox.Text.Equals(""))
+                if (!percentTextBox.Text.Equals(""))
                 {
-                    double percent = Convert.ToDouble(percentTextBox.Text);
+                    double percent;
+                    try
+                    {
+                        percent = Convert.ToDouble(percentTextBox.Text);
+                    }
+                    catch
+                    {
+                        return;
+                    }
+                    
                     if (percent < 0 || percent > 100)
                     {
                         MessageBox.Show("Значение не входит в промежуток [0,100]");
                     }
                     else
                     {
+                        if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
+                        {
+                            Directory.CreateDirectory(pathToQuicklookCatalog.Text);
+                        }
                         Quicklook ql = new Quicklook();
+                        if(subdirectoryCheckBox.Checked == true)
+                        {
+                            ql.GoDirectories = true;
+                        }
                         ql.CreateQuicklook(
                             pathToImage.Text,
                             pathToQuicklookCatalog.Text,
-                            //@"\\Server2\gil\COSMOS_RAB\2019\SPOT_7\UTM",
-                            //@"C:\Users\rez\Pictures\Saburov\forQuicklooks",
                             percent, format);
                     }
                 }
-                else
+                else if(!widthSizeTextBox.Text.Equals(""))
                 {
-                    int size = Convert.ToInt32(widthSizeTextBox.Text);
+                    int size;
+                    try
+                    {
+                        size = Convert.ToInt32(widthSizeTextBox.Text);
+                    }
+                    catch
+                    {
+                        return;
+                    }
+                    
                     if (size <= 0 || size > 10000)
                     {
                         MessageBox.Show("Значение не входит в промежуток (0,10000]");
                     }
                     else
                     {
+                        if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
+                        {
+                            Directory.CreateDirectory(pathToQuicklookCatalog.Text);
+                        }
                         Quicklook ql = new Quicklook();
+                        if (subdirectoryCheckBox.Checked == true)
+                        {
+                            ql.GoDirectories = true;
+                        }
+                        createQuicklookButton.Enabled = false;
                         ql.CreateQuicklook(
                             pathToImage.Text,
                             pathToQuicklookCatalog.Text,
-                            //@"\\Server2\gil\COSMOS_RAB\2019\SPOT_7\UTM",
-                            //@"C:\Users\rez\Pictures\Saburov\forQuicklooks",
                             size, format);
                     }
                 }
+                else if (!squareTextBox.Text.Equals(""))
+                {
+                    if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
+                    {
+                        Directory.CreateDirectory(pathToQuicklookCatalog.Text);
+                    }
+                    Quicklook ql = new Quicklook();
+                    if (subdirectoryCheckBox.Checked == true)
+                    {
+                        ql.GoDirectories = true;
+                    }
+                    ql.CreateQuicklook(
+                        pathToImage.Text,
+                        pathToQuicklookCatalog.Text,
+                        squareTextBox.Text,
+                        format);
+
+                }
+                createQuicklookButton.Enabled = true;
             }
             
             //(new ProgressDialog()).ShowDialog(this);
@@ -88,7 +180,7 @@ namespace FindCloud
 
         private void SelectPathToImageButton_Click(object sender, EventArgs e)
         {
-            if (setOneFileRadioButton.Checked)
+            if (setOneFileRadioButton.Checked) //если выбираем 1 файл
             {
                 using (OpenFileDialog openFileDialog = new OpenFileDialog())
                 {
@@ -97,6 +189,15 @@ namespace FindCloud
                         try
                         {
                             pathToImage.Text = openFileDialog.FileName;
+
+                            if (Directory.Exists(Path.GetDirectoryName(pathToImage.Text)))
+                            {
+                                pathToQuicklookCatalog.Text = Path.GetDirectoryName(pathToImage.Text) + @"\QuickLook";
+                            }
+                            else
+                            {
+                                MessageBox.Show("Указанная директория не существует");
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -106,10 +207,32 @@ namespace FindCloud
                     }
                 }
             }
-            else
+            else //если выбираем папку
             {
                 pathToImage.Text = Cataloguer.FolderBrowser.ChooseFolder(this);
+
+                if (Directory.Exists(pathToImage.Text))
+                {
+                    pathToQuicklookCatalog.Text = pathToImage.Text + @"\QuickLook";
+                }
+                else
+                {
+                    MessageBox.Show("указанная директория не существует");
+                }
             }
+
+            //if (!pathToImage.Text.Equals(""))
+            //{
+            //    CreateQuicklookCatalog();
+            //}
+            //if (Directory.Exists(pathToImage.Text))
+            //{
+            //    pathToQuicklookCatalog.Text = Path.GetDirectoryName(pathToImage.Text) + @"\QuickLook";
+            //}
+            //else
+            //{
+            //    MessageBox.Show("указанная директория не существует");
+            //}
         }
 
         private void SelectPathToQuicklookCatalog_Click(object sender, EventArgs e)
@@ -137,13 +260,14 @@ namespace FindCloud
         {
             percentTextBox.Text = "";
             widthSizeTextBox.Text = "2000";
-
+            squareTextBox.Text = "";
         }
 
         private void PercentTextBox_Click(object sender, EventArgs e)
         {
-            widthSizeTextBox.Text = "";
             percentTextBox.Text = "10";
+            widthSizeTextBox.Text = "";
+            squareTextBox.Text = "";
         }
 
         private void JpgRadioButton_CheckedChanged(object sender, EventArgs e)
@@ -158,8 +282,25 @@ namespace FindCloud
         {
             if(tiffRadioButton.Checked == true)
             {
-                format = "tiff";
+                format = "tif";
             }
+        }
+
+        private void subdirectoryCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void widthSizeLabel_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void SquareTextBox_Click(object sender, EventArgs e)
+        {
+            squareTextBox.Text = "4000000";
+            widthSizeTextBox.Text = "";
+            percentTextBox.Text = "";
         }
     }
 }
