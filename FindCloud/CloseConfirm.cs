@@ -10,6 +10,10 @@ using System.Windows.Forms;
 
 namespace FindCloud
 {
+    /// <summary>
+    /// Форма открывается, если нажать кнопку "отмена", когда создаётся квиклук;
+    /// 
+    /// </summary>
     public partial class CloseConfirm : Form
     {
         public bool IsAccepted { get; set; }

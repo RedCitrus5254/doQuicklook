@@ -77,7 +77,6 @@
             this.openFileLabel.Size = new System.Drawing.Size(108, 17);
             this.openFileLabel.TabIndex = 1;
             this.openFileLabel.Text = "Открыть файл:";
-            this.openFileLabel.Click += new System.EventHandler(this.openFileLabel_Click);
             // 
             // pathToImage
             // 
@@ -152,7 +151,6 @@
             this.widthSizeLabel.Size = new System.Drawing.Size(49, 13);
             this.widthSizeLabel.TabIndex = 9;
             this.widthSizeLabel.Text = "Сторона";
-            this.widthSizeLabel.Click += new System.EventHandler(this.widthSizeLabel_Click);
             // 
             // percentLabel
             // 
@@ -238,7 +236,6 @@
             this.subdirectoryCheckBox.TabIndex = 13;
             this.subdirectoryCheckBox.Text = "Подкаталоги";
             this.subdirectoryCheckBox.UseVisualStyleBackColor = true;
-            this.subdirectoryCheckBox.CheckedChanged += new System.EventHandler(this.subdirectoryCheckBox_CheckedChanged);
             // 
             // squareTextBox
             // 

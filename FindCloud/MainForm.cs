@@ -11,7 +11,15 @@ using System.Windows.Forms;
 
 namespace FindCloud
 {
-    public partial class MainForm : Form
+    /// <summary>
+    /// Главная форма. Здесь указывается путь к снимку, к каталогу квиклуков (по умолчанию папка QuickLook создаётся в папке со снимками);
+    /// Можно выбрать выходное расширение файла (jpg или tif);
+    /// Уменьшить изображение : 1) Выбрать размер наибольшей стороны (вторая считается пропорционально), 2) Указать в процентах размеры сторон,
+    /// 3) указать площадь выходного изображения;
+    /// Выбор одного из чекбоксов  определяет, при нажатии кнопки выбирается один файл или вся папка;
+    /// Также есть чекбокс подкаталогов. Если он true, будут обрабатываться все снимки подкаталогов и сохраняться в указанную папку. 
+    /// </summary>
+    public partial class MainForm : Form, IMainForm
     {
        
         private string format = "jpg";
@@ -31,153 +39,201 @@ namespace FindCloud
 
         }
 
-        
-        private void CreateQuicklookCatalog() //проверяет, существует ли папка с квиклуками в папке с изображениями, если напрямую не указана папка квиклуков. Если нет, пишет в 
-        {                                     //textbox путь к каталогу квиклуков, и при нажатии на кнопку создания квиклука создаёт каталог
-            string quicklookPath;
-            if (pathToQuicklookCatalog.Text.Equals(""))
-            {
-                FileAttributes attr = File.GetAttributes(pathToImage.Text);
-
-                //detect whether its a directory or file
-                if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
-                {
-                    quicklookPath = pathToImage.Text;
-                    Console.WriteLine(quicklookPath);
-                }
-                else
-                {
-                    quicklookPath = Path.GetDirectoryName(pathToImage.Text);
-                    Console.WriteLine(quicklookPath);
-                }
-                quicklookPath += @"\QuickLook";
-                
-                
-                pathToQuicklookCatalog.Text = quicklookPath;
-                    
-            
-                //if (pathToImage.Text.Contains(".tif"))
-                //{
-                //    quicklookPath = pathToImage.Text.Replace(pathToImage.Text.Substring(pathToImage.Text.LastIndexOf(@"\")), "");
-                //    Console.WriteLine(quicklookPath);
-                //}
-            }
-            else
-            {
-                return;
-            }
-        }
-        private void CreateQuicklookButton_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Проверка правильности заполнения MainForm
+        /// </summary>
+        /// <returns></returns>
+        private bool IsFormCorrect()
         {
             if (pathToImage.Text.Equals(""))
             {
                 MessageBox.Show("Выберите путь к изображениям");
-                return;
+                return false;
             }
-            
-            if (widthSizeTextBox.Text.Equals("") && percentTextBox.Text.Equals("")&&squareTextBox.Text.Equals(""))
+            if (widthSizeTextBox.Text.Equals("") && percentTextBox.Text.Equals("") && squareTextBox.Text.Equals(""))
             {
                 MessageBox.Show($"Неверные значения полей {widthSizeLabel.Text} или {percentLabel.Text} или {squareLabel.Text}");
+                return false;
+            }
+            int width = 1;
+            int square = 1;
+            double prct = 1.0;
+            if (!widthSizeTextBox.Text.Equals("") && !int.TryParse(widthSizeTextBox.Text, out width))
+            {
+                MessageBox.Show("Неверное значение стороны");
+                return false;
             }
             else
             {
-                
-                if (!percentTextBox.Text.Equals(""))
+                if (width < 0 || width>10000)
                 {
-                    double percent;
-                    try
-                    {
-                        percent = Convert.ToDouble(percentTextBox.Text);
-                    }
-                    catch
-                    {
-                        return;
-                    }
-                    
-                    if (percent < 0 || percent > 100)
-                    {
-                        MessageBox.Show("Значение не входит в промежуток [0,100]");
-                    }
-                    else
-                    {
-                        if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
-                        {
-                            Directory.CreateDirectory(pathToQuicklookCatalog.Text);
-                        }
-                        Quicklook ql = new Quicklook();
-                        if(subdirectoryCheckBox.Checked == true)
-                        {
-                            ql.GoDirectories = true;
-                        }
-                        ql.CreateQuicklook(
-                            pathToImage.Text,
-                            pathToQuicklookCatalog.Text,
-                            percent, format);
-                    }
+                    MessageBox.Show("Неверное значение стороны");
+                    return false;
                 }
-                else if(!widthSizeTextBox.Text.Equals(""))
+            }
+            if(!squareTextBox.Text.Equals("") && !int.TryParse(squareTextBox.Text, out square))
+            {
+                MessageBox.Show("Неверное значение площади");
+                return false;
+            }
+            else
+            {
+                if (square < 0 || square > 900000000)
                 {
-                    int size;
-                    try
-                    {
-                        size = Convert.ToInt32(widthSizeTextBox.Text);
-                    }
-                    catch
-                    {
-                        return;
-                    }
-                    
-                    if (size <= 0 || size > 10000)
-                    {
-                        MessageBox.Show("Значение не входит в промежуток (0,10000]");
-                    }
-                    else
-                    {
-                        if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
-                        {
-                            Directory.CreateDirectory(pathToQuicklookCatalog.Text);
-                        }
-                        Quicklook ql = new Quicklook();
-                        if (subdirectoryCheckBox.Checked == true)
-                        {
-                            ql.GoDirectories = true;
-                        }
-                        createQuicklookButton.Enabled = false;
-                        ql.CreateQuicklook(
-                            pathToImage.Text,
-                            pathToQuicklookCatalog.Text,
-                            size, format);
-                    }
+                    MessageBox.Show("Неверное значение площади");
+                    return false;
                 }
-                else if (!squareTextBox.Text.Equals(""))
+            }
+            if(!percentTextBox.Text.Equals("") && !double.TryParse(percentTextBox.Text, out prct))
+            {
+                MessageBox.Show("Неверное значение процента");
+                return false;
+            }
+            else
+            {
+                if (prct < 0 || prct > 100)
                 {
-                    if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
-                    {
-                        Directory.CreateDirectory(pathToQuicklookCatalog.Text);
-                    }
-                    Quicklook ql = new Quicklook();
-                    if (subdirectoryCheckBox.Checked == true)
-                    {
-                        ql.GoDirectories = true;
-                    }
-                    ql.CreateQuicklook(
-                        pathToImage.Text,
-                        pathToQuicklookCatalog.Text,
-                        squareTextBox.Text,
-                        format);
+                    MessageBox.Show("Неверное значение процента");
+                    return false;
+                }
+            }
 
+            if (pathToImage.Text.EndsWith(".tif"))
+            {
+                if (!Directory.Exists(Path.GetDirectoryName(pathToImage.Text)))
+                {
+                    MessageBox.Show("Неверный путь к снимку");
+                    return false;
                 }
-                createQuicklookButton.Enabled = true;
+                
+            }
+            else
+            {
+                if (!Directory.Exists(pathToImage.Text))
+                {
+                    MessageBox.Show("Неверный путь к снимку");
+                    return false;
+                }
+            }
+
+            if (!Directory.GetParent(pathToQuicklookCatalog.Text).Exists)
+            {
+                MessageBox.Show("Неверный путь к каталогу квиклуков");
+                return false;
+            }
+
+            return true;
+            
+        }
+        /// <summary>
+        /// Обработка нажатия кнопки "Создать квиклук"
+        /// Кнопка блокируется
+        /// Проверяет, какое поле (процент, сторона, площадь снимка) непустое, и вызывает метод создания квиклука класса Quicklook;
+        /// Затем подписывается на объект Quicklook (Это сделано, чтобы отследить, когда создание квиклука завершится,
+        /// и сделать кнопку создания квиклука доступной;
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void  CreateQuicklookButton_Click(object sender, EventArgs e)
+        {
+            if (!IsFormCorrect())
+            {
+                return;
+            }
+
+            createQuicklookButton.Enabled = false;
+
+            if (!percentTextBox.Text.Equals(""))
+            {
+                double percent;
+                try
+                {
+                    percent = Convert.ToDouble(percentTextBox.Text);
+                }
+                catch
+                {
+                    return;
+                }
+                
+                if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
+                {
+                    Directory.CreateDirectory(pathToQuicklookCatalog.Text);
+                }
+                Quicklook ql = new Quicklook();
+                if (subdirectoryCheckBox.Checked == true)
+                {
+                    ql.GoDirectories = true;
+                }
+                ql.CreateQuicklook(
+                    pathToImage.Text,
+                    pathToQuicklookCatalog.Text,
+                    percent, format);
+                ql.SubscribeMainform(this);
+
+            }
+            else if (!widthSizeTextBox.Text.Equals(""))
+            {
+
+                int size;
+                try
+                {
+                    size = Convert.ToInt32(widthSizeTextBox.Text);
+                }
+                catch
+                {
+                    return;
+                }
+                
+                if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
+                {
+                    Directory.CreateDirectory(pathToQuicklookCatalog.Text);
+                }
+                Quicklook ql = new Quicklook();
+                if (subdirectoryCheckBox.Checked == true)
+                {
+                    ql.GoDirectories = true;
+                }
+                
+                ql.CreateQuicklook(
+                    pathToImage.Text,
+                    pathToQuicklookCatalog.Text,
+                    size, format);
+                ql.SubscribeMainform(this);
+                
+            }
+            else if (!squareTextBox.Text.Equals(""))
+            {
+
+                if (!Directory.Exists(pathToQuicklookCatalog.Text)) //создаём каталог квиклуков, если его нет
+                {
+                    Directory.CreateDirectory(pathToQuicklookCatalog.Text);
+                }
+                Quicklook ql = new Quicklook();
+                if (subdirectoryCheckBox.Checked == true)
+                {
+                    ql.GoDirectories = true;
+                }
+                ql.CreateQuicklook(
+                    pathToImage.Text,
+                    pathToQuicklookCatalog.Text,
+                    squareTextBox.Text,
+                    format);
+                ql.SubscribeMainform(this);
             }
             
+
+
+
+
             //(new ProgressDialog()).ShowDialog(this);
         }
 
-        private void openFileLabel_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        /// <summary>
+        /// В зависимости от чекбокса: если выбираем один файл, то используется OpenfileDialog;
+        /// Если выбираем папку, то Cataloguer.FolderBrowser
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void SelectPathToImageButton_Click(object sender, EventArgs e)
         {
             if (setOneFileRadioButton.Checked) //если выбираем 1 файл
@@ -193,6 +249,10 @@ namespace FindCloud
                             if (Directory.Exists(Path.GetDirectoryName(pathToImage.Text)))
                             {
                                 pathToQuicklookCatalog.Text = Path.GetDirectoryName(pathToImage.Text) + @"\QuickLook";
+                            }
+                            else if (pathToImage.Text.Equals(""))
+                            {
+
                             }
                             else
                             {
@@ -235,6 +295,11 @@ namespace FindCloud
             //}
         }
 
+        /// <summary>
+        /// Кнопка выбора пути к каталогу квиклуков, если нужно сохранить квиклук не в папке QuickLook, которая находится в папке со снимком
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void SelectPathToQuicklookCatalog_Click(object sender, EventArgs e)
         {
             pathToQuicklookCatalog.Text = Cataloguer.FolderBrowser.ChooseFolder(this);
@@ -256,18 +321,28 @@ namespace FindCloud
             //}
         }
 
+        /// <summary>
+        /// При нажатии на одно из полей размеров изображений, ему присваивается стандартное значение, а другие поля становятся пустыми
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WidthSizeTextBox_Click(object sender, EventArgs e)
         {
             percentTextBox.Text = "";
             widthSizeTextBox.Text = "2000";
             squareTextBox.Text = "";
         }
-
         private void PercentTextBox_Click(object sender, EventArgs e)
         {
             percentTextBox.Text = "10";
             widthSizeTextBox.Text = "";
             squareTextBox.Text = "";
+        }
+        private void SquareTextBox_Click(object sender, EventArgs e)
+        {
+            squareTextBox.Text = "4000000";
+            widthSizeTextBox.Text = "";
+            percentTextBox.Text = "";
         }
 
         private void JpgRadioButton_CheckedChanged(object sender, EventArgs e)
@@ -277,7 +352,6 @@ namespace FindCloud
                 format = "jpg";
             }
         }
-
         private void TiffRadioButton_CheckedChanged(object sender, EventArgs e)
         {
             if(tiffRadioButton.Checked == true)
@@ -286,21 +360,9 @@ namespace FindCloud
             }
         }
 
-        private void subdirectoryCheckBox_CheckedChanged(object sender, EventArgs e)
+        public void EnableCreateQuicklookButton()
         {
-            
-        }
-
-        private void widthSizeLabel_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void SquareTextBox_Click(object sender, EventArgs e)
-        {
-            squareTextBox.Text = "4000000";
-            widthSizeTextBox.Text = "";
-            percentTextBox.Text = "";
+            createQuicklookButton.Enabled = true;
         }
     }
 }

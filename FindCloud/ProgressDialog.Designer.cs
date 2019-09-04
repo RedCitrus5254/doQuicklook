@@ -107,7 +107,6 @@ namespace FindCloud
             this.Name = "ProgressDialog";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Прогресс...";
-            this.Load += new System.EventHandler(this.ProgressDialog_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -10,6 +10,10 @@ using System.Windows.Forms;
 
 namespace FindCloud
 {
+    /// <summary>
+    /// Форма открывается, если программа видит, что квиклук этого снимка уже создан;
+    /// Форма предлагает на выбор: перезаписать квиклук или пропустить, перезаписать все квиклуки или пропустить все, что были уже созданы 
+    /// </summary>
     public partial class OverwriteFile : Form
     {
         public bool IsAccepted { get; set; }
